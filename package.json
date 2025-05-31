@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
-    "test": "vitest",
+    "test": "vitest run",
     "release": "release-it"
   },
   "devDependencies": {
