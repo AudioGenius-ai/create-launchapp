@@ -12,7 +12,10 @@ const spawnMock = vi.fn(() => ({
 // Mock fs.existsSync to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    promises: {
+      rm: vi.fn().mockResolvedValue(undefined)
+    }
   }
 }));
 
@@ -61,15 +64,42 @@ describe('initProject', () => {
     vi.clearAllMocks();
   });
 
-  it('executes git clone with branch', async () => {
+  it('executes git clone and reinitializes repository', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
     setSpawn(spawnMock);
     await initProject('proj', { branch: 'feature' });
 
-    expect(spawnMock).toHaveBeenCalledWith(
+    expect(spawnMock).toHaveBeenNthCalledWith(1,
       'git',
       ['clone', 'https://github.com/launchapp/launchapp.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(2,
+      'git',
+      ['init'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(3,
+      'git',
+      ['add', '.'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(4,
+      'git',
+      ['commit', '-m', 'Initial commit'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+  });
+
+  it('installs dependencies with pnpm when requested', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', { install: true });
+
+    expect(spawnMock).toHaveBeenLastCalledWith(
+      'pnpm',
+      ['install'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
     );
   });
 });
