@@ -38,11 +38,10 @@ describe('CLI argument parsing', () => {
   it('passes options to initProject', async () => {
     const mod = await import('../src/commands/initProject');
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
-
     const envMod = await import('../src/commands/createEnv');
-    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockImplementation(() => {});
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockResolvedValue(undefined);
+    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install', '--create-env'];
 
-    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
     try {
       await import('../src/index');
     } catch (e) {
@@ -50,16 +49,14 @@ describe('CLI argument parsing', () => {
     }
 
     expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
-    expect(createEnvMock).not.toHaveBeenCalled();
+    expect(createEnvMock).toHaveBeenCalledWith('myapp');
   });
 
-  it('calls createEnv when --env is provided', async () => {
-    const initMod = await import('../src/commands/initProject');
-    vi.spyOn(initMod, 'initProject').mockResolvedValue(undefined);
+  it('supports the create-env subcommand', async () => {
     const envMod = await import('../src/commands/createEnv');
-    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockImplementation(() => {});
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockResolvedValue(undefined);
 
-    process.argv = ['node', 'create-launchapp', 'proj', '--env'];
+    process.argv = ['node', 'create-launchapp', 'create-env', 'proj'];
     try {
       await import('../src/index');
     } catch (e) {
@@ -74,6 +71,7 @@ describe('initProject', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.unmock('../src/commands/initProject');
+    vi.unmock('../src/commands/createEnv');
   });
 
   afterEach(async () => {
@@ -81,6 +79,7 @@ describe('initProject', () => {
     const { spawn } = await import('child_process');
     setSpawn(spawn);
     vi.clearAllMocks();
+    vi.unmock('../src/commands/createEnv');
   });
 
   it('executes git clone with branch', async () => {
