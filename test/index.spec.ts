@@ -30,11 +30,12 @@ describe('CLI argument parsing', () => {
   afterEach(() => {
     process.argv = originalArgv.slice();
     exitSpy.mockRestore();
+    vi.unmock('../src/commands/initProject');
   });
 
   it('passes options to initProject', async () => {
-    const initProjectMock = vi.fn().mockResolvedValue(undefined);
-    vi.doMock('../src/commands/initProject', () => ({ initProject: initProjectMock }));
+    const mod = await import('../src/commands/initProject');
+    const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
 
     process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
     try {
@@ -50,15 +51,19 @@ describe('CLI argument parsing', () => {
 describe('initProject', () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.mock('child_process', () => ({ spawn: spawnMock }));
+    vi.unmock('../src/commands/initProject');
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    const { setSpawn } = await import('../src/commands/initProject');
+    const { spawn } = await import('child_process');
+    setSpawn(spawn);
     vi.clearAllMocks();
   });
 
   it('executes git clone with branch', async () => {
-    const { initProject } = await import('../src/commands/initProject');
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
     await initProject('proj', { branch: 'feature' });
 
     expect(spawnMock).toHaveBeenCalledWith(

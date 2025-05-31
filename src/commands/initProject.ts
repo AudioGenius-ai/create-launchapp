@@ -1,4 +1,10 @@
 import { spawn } from 'child_process';
+
+// Allow overriding spawn for testing
+export let spawnFn = spawn;
+export function setSpawn(fn: typeof spawn) {
+  spawnFn = fn;
+}
 import fs from 'fs';
 import path from 'path';
 
@@ -7,9 +13,9 @@ export interface InitOptions {
   install?: boolean;
 }
 
-function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
+export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: 'inherit', ...options });
+    const child = spawnFn(command, args, { stdio: 'inherit', ...options });
     child.on('error', reject);
     child.on('close', (code) => {
       if (code === 0) {
