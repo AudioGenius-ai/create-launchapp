@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { initProject } from './commands/initProject';
 
 function showHelp() {
