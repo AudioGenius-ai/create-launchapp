@@ -66,12 +66,12 @@ describe('initProject', () => {
 
   it('executes git clone and reinitializes repository', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
-    setSpawn(spawnMock);
+    setSpawn(spawnMock as any);
     await initProject('proj', { branch: 'feature' });
 
     expect(spawnMock).toHaveBeenNthCalledWith(1,
       'git',
-      ['clone', 'https://github.com/launchapp/launchapp.git', 'proj', '-b', 'feature'],
+      ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(2,
