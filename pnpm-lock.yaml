@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      open:
+        specifier: ^10.1.0
+        version: 10.1.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
