@@ -41,6 +41,6 @@ export async function initProject(projectName: string, options: InitOptions) {
   await run('git', args);
 
   if (options.install) {
-    await run('npm', ['install'], { cwd: path.resolve(projectName) });
+    await run('pnpm', ['install'], { cwd: path.resolve(projectName) });
   }
 }
