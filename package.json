@@ -13,12 +13,14 @@
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
-    "test": "vitest"
+    "test": "vitest",
+    "release": "release-it"
   },
   "devDependencies": {
     "tsup": "^6.7.0",
     "typescript": "^5.2.2",
     "vitest": "^1.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "release-it": "^17.0.0"
   }
 }
