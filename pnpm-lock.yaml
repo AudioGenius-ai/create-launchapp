@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      inquirer:
+        specifier: ^12.6.3
+        version: 12.6.3(@types/node@22.15.29)
       open:
         specifier: ^10.1.2
         version: 10.1.2

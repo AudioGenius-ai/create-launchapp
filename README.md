@@ -15,7 +15,14 @@ The above command clones the Launchapp repository into `my-app` and runs `pnpm i
 ### Options
 
 - `--branch <branch>`: clone a specific branch from the Launchapp repository.
-- `--install`: automatically run `pnpm install` after cloning.
+- `--install`: automatically run `npm install` after cloning.
+- `--create-env`: generate a basic `.env` file after cloning.
+
+You can also run the environment setup separately:
+
+```bash
+npx create-launchapp create-env my-app
+```
 
 ## Future Extensibility
 

@@ -1,6 +1,6 @@
 {
   "name": "create-launchapp",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "description": "CLI script to get a lunchapp project launched",
   "main": "dist/index.js",
   "bin": {
@@ -11,6 +11,7 @@
     "dist"
   ],
   "dependencies": {
+    "inquirer": "^12.6.3",
     "open": "^10.1.2"
   },
   "scripts": {
@@ -20,10 +21,10 @@
     "release": "release-it"
   },
   "devDependencies": {
+    "@types/node": "^22.15.29",
+    "release-it": "^19.0.3",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.4",
-    "@types/node": "^22.15.29",
-    "release-it": "^19.0.3"
+    "vitest": "^3.1.4"
   }
 }
