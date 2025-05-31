@@ -10,7 +10,7 @@ Install the package globally or use `npx` to run it without installation.
 npx create-launchapp my-app --install
 ```
 
-The above command clones the Launchapp repository into `my-app` and runs `npm install` inside the created directory.
+The above command clones the Launchapp repository into `my-app` and runs `pnpm install` inside the created directory.
 
 ### Options
 

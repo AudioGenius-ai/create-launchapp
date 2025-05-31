@@ -13,7 +13,24 @@ const spawnMock = vi.fn(() => ({
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn().mockReturnValue(false),
-    writeFileSync: vi.fn()
+    writeFileSync: vi.fn(),
+    promises: {
+      rm: vi.fn().mockResolvedValue(undefined),
+      writeFile: vi.fn().mockResolvedValue(undefined)
+    }
+  }
+}));
+
+// Mock inquirer to avoid hanging on prompts
+vi.mock('inquirer', () => ({
+  default: {
+    prompt: vi.fn().mockImplementation(async (questions: any[]) => {
+      const answers: Record<string, string> = {};
+      questions.forEach(q => {
+        answers[q.name] = q.default || '';
+      });
+      return answers;
+    })
   }
 }));
 
@@ -82,15 +99,42 @@ describe('initProject', () => {
     vi.unmock('../src/commands/createEnv');
   });
 
-  it('executes git clone with branch', async () => {
+  it('executes git clone and reinitializes repository', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
     setSpawn(spawnMock as any);
     await initProject('proj', { branch: 'feature' });
 
-    expect(spawnMock).toHaveBeenCalledWith(
+    expect(spawnMock).toHaveBeenNthCalledWith(1,
       'git',
       ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(2,
+      'git',
+      ['init'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(3,
+      'git',
+      ['add', '.'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(4,
+      'git',
+      ['commit', '-m', 'Initial commit'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+  });
+
+  it('installs dependencies with pnpm when requested', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', { install: true });
+
+    expect(spawnMock).toHaveBeenLastCalledWith(
+      'pnpm',
+      ['install'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
     );
   });
 });
@@ -102,14 +146,14 @@ describe('createEnv', () => {
 
   it('writes .env file', async () => {
     const fs = await import('fs');
-    const writeSpy = fs.default.writeFileSync as any;
+    const writeSpy = fs.default.promises.writeFile as any;
     const { createEnv } = await import('../src/commands/createEnv');
 
-    createEnv('proj');
+    await createEnv('proj');
 
     expect(writeSpy).toHaveBeenCalledWith(
       require('path').join('proj', '.env'),
-      expect.stringContaining('MY_ENV_VAR=123')
+      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
     );
   });
 });
