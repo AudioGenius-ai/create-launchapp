@@ -10,6 +10,9 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "open": "^10.1.2"
+  },
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
