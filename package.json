@@ -1,0 +1,17 @@
+{
+  "name": "create-launchapp",
+  "version": "1.0.0",
+  "description": "CLI script to get a lunchapp project launched",
+  "main": "dist/index.js",
+  "bin": {
+    "create-launchapp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepare": "tsup"
+  },
+  "devDependencies": {
+    "tsup": "^6.7.0",
+    "typescript": "^5.2.2"
+  }
+}
