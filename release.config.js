@@ -12,7 +12,7 @@ module.exports = {
     }
   },
   hooks: {
-    'before:init': ['pnpm test'],
+    'before:init': ['pnpm test run'],
     'after:bump': ['pnpm run build']
   }
 };

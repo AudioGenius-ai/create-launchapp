@@ -27,6 +27,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm install --frozen-lockfile
+      - name: Setup git
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
       - name: Bump version
         run: pnpm release --ci --increment=minor
         env:
