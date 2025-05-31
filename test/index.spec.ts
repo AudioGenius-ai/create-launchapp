@@ -13,7 +13,24 @@ const spawnMock = vi.fn(() => ({
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn().mockReturnValue(false),
-    writeFileSync: vi.fn()
+    writeFileSync: vi.fn(),
+    promises: {
+      rm: vi.fn().mockResolvedValue(undefined),
+      writeFile: vi.fn().mockResolvedValue(undefined)
+    }
+  }
+}));
+
+// Mock inquirer to avoid hanging on prompts
+vi.mock('inquirer', () => ({
+  default: {
+    prompt: vi.fn().mockImplementation(async (questions: any[]) => {
+      const answers: Record<string, string> = {};
+      questions.forEach(q => {
+        answers[q.name] = q.default || '';
+      });
+      return answers;
+    })
   }
 }));
 
@@ -129,14 +146,14 @@ describe('createEnv', () => {
 
   it('writes .env file', async () => {
     const fs = await import('fs');
-    const writeSpy = fs.default.writeFileSync as any;
+    const writeSpy = fs.default.promises.writeFile as any;
     const { createEnv } = await import('../src/commands/createEnv');
 
-    createEnv('proj');
+    await createEnv('proj');
 
     expect(writeSpy).toHaveBeenCalledWith(
       require('path').join('proj', '.env'),
-      expect.stringContaining('MY_ENV_VAR=123')
+      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
     );
   });
 });
