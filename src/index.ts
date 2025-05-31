@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { initProject } from './commands/initProject';
+import { createEnv } from './commands/createEnv';
 
 function showHelp() {
-  console.log(`Usage: create-launchapp <project-name> [--branch <branch>] [--install]`);
+  console.log(`Usage: create-launchapp <project-name> [--branch <branch>] [--install] [--env]`);
 }
 
 async function main() {
@@ -17,6 +18,7 @@ async function main() {
 
   let branch: string | undefined;
   let install = false;
+  let env = false;
 
   for (let i = 1; i < args.length; i++) {
     const arg = args[i];
@@ -29,6 +31,8 @@ async function main() {
       branch = args[++i];
     } else if (arg === '--install') {
       install = true;
+    } else if (arg === '--env') {
+      env = true;
     } else {
       console.error(`Unknown argument: ${arg}`);
       showHelp();
@@ -38,6 +42,9 @@ async function main() {
 
   try {
     await initProject(projectName, { branch, install });
+    if (env) {
+      createEnv(projectName);
+    }
   } catch (err: any) {
     console.error(err.message);
     process.exit(1);

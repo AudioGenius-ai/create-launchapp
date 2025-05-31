@@ -9,10 +9,11 @@ const spawnMock = vi.fn(() => ({
   }
 }));
 
-// Mock fs.existsSync to avoid filesystem side effects
+// Mock fs methods to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    writeFileSync: vi.fn()
   }
 }));
 
@@ -31,11 +32,15 @@ describe('CLI argument parsing', () => {
     process.argv = originalArgv.slice();
     exitSpy.mockRestore();
     vi.unmock('../src/commands/initProject');
+    vi.unmock('../src/commands/createEnv');
   });
 
   it('passes options to initProject', async () => {
     const mod = await import('../src/commands/initProject');
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
+
+    const envMod = await import('../src/commands/createEnv');
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockImplementation(() => {});
 
     process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
     try {
@@ -45,6 +50,23 @@ describe('CLI argument parsing', () => {
     }
 
     expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
+    expect(createEnvMock).not.toHaveBeenCalled();
+  });
+
+  it('calls createEnv when --env is provided', async () => {
+    const initMod = await import('../src/commands/initProject');
+    vi.spyOn(initMod, 'initProject').mockResolvedValue(undefined);
+    const envMod = await import('../src/commands/createEnv');
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockImplementation(() => {});
+
+    process.argv = ['node', 'create-launchapp', 'proj', '--env'];
+    try {
+      await import('../src/index');
+    } catch (e) {
+      // process.exit throws
+    }
+
+    expect(createEnvMock).toHaveBeenCalledWith('proj');
   });
 });
 
@@ -70,6 +92,25 @@ describe('initProject', () => {
       'git',
       ['clone', 'https://github.com/launchapp/launchapp.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
+    );
+  });
+});
+
+describe('createEnv', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('writes .env file', async () => {
+    const fs = await import('fs');
+    const writeSpy = fs.default.writeFileSync as any;
+    const { createEnv } = await import('../src/commands/createEnv');
+
+    createEnv('proj');
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      require('path').join('proj', '.env'),
+      expect.stringContaining('MY_ENV_VAR=123')
     );
   });
 });
