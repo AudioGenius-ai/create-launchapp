@@ -9,7 +9,7 @@ const spawnMock = vi.fn(() => ({
   }
 }));
 
-// Mock fs.existsSync to avoid filesystem side effects
+// Mock fs methods to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn().mockReturnValue(false),
@@ -40,8 +40,8 @@ describe('CLI argument parsing', () => {
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
     const envMod = await import('../src/commands/createEnv');
     const createEnvMock = vi.spyOn(envMod, 'createEnv').mockResolvedValue(undefined);
-
     process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install', '--create-env'];
+
     try {
       await import('../src/index');
     } catch (e) {
@@ -91,6 +91,25 @@ describe('initProject', () => {
       'git',
       ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
+    );
+  });
+});
+
+describe('createEnv', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('writes .env file', async () => {
+    const fs = await import('fs');
+    const writeSpy = fs.default.writeFileSync as any;
+    const { createEnv } = await import('../src/commands/createEnv');
+
+    createEnv('proj');
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      require('path').join('proj', '.env'),
+      expect.stringContaining('MY_ENV_VAR=123')
     );
   });
 });
