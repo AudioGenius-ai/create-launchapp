@@ -1,11 +1,27 @@
 import { initProject } from './commands/initProject';
+import { createEnv } from './commands/createEnv';
 
 function showHelp() {
-  console.log(`Usage: create-launchapp <project-name> [--branch <branch>] [--install]`);
+  console.log(
+    `Usage: create-launchapp <project-name> [--branch <branch>] [--install] [--create-env]\n` +
+      `       create-launchapp create-env <project-name>`
+  );
 }
 
 async function main() {
   const args = process.argv.slice(2);
+
+  if (args[0] === 'create-env') {
+    const project = args[1];
+    if (!project) {
+      console.error('Error: project-name is required for create-env.');
+      showHelp();
+      process.exit(1);
+    }
+    await createEnv(project);
+    return;
+  }
+
   const projectName = args[0];
 
   if (!projectName || projectName.startsWith('--')) {
@@ -16,6 +32,7 @@ async function main() {
 
   let branch: string | undefined;
   let install = false;
+  let createEnvAfter = false;
 
   for (let i = 1; i < args.length; i++) {
     const arg = args[i];
@@ -28,6 +45,8 @@ async function main() {
       branch = args[++i];
     } else if (arg === '--install') {
       install = true;
+    } else if (arg === '--create-env') {
+      createEnvAfter = true;
     } else {
       console.error(`Unknown argument: ${arg}`);
       showHelp();
@@ -37,6 +56,9 @@ async function main() {
 
   try {
     await initProject(projectName, { branch, install });
+    if (createEnvAfter) {
+      await createEnv(projectName);
+    }
   } catch (err: any) {
     console.error(err.message);
     process.exit(1);

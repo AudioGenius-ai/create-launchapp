@@ -12,7 +12,8 @@ const spawnMock = vi.fn(() => ({
 // Mock fs.existsSync to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    writeFileSync: vi.fn()
   }
 }));
 
@@ -31,13 +32,16 @@ describe('CLI argument parsing', () => {
     process.argv = originalArgv.slice();
     exitSpy.mockRestore();
     vi.unmock('../src/commands/initProject');
+    vi.unmock('../src/commands/createEnv');
   });
 
   it('passes options to initProject', async () => {
     const mod = await import('../src/commands/initProject');
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
+    const envMod = await import('../src/commands/createEnv');
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockResolvedValue(undefined);
 
-    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
+    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install', '--create-env'];
     try {
       await import('../src/index');
     } catch (e) {
@@ -45,6 +49,21 @@ describe('CLI argument parsing', () => {
     }
 
     expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
+    expect(createEnvMock).toHaveBeenCalledWith('myapp');
+  });
+
+  it('supports the create-env subcommand', async () => {
+    const envMod = await import('../src/commands/createEnv');
+    const createEnvMock = vi.spyOn(envMod, 'createEnv').mockResolvedValue(undefined);
+
+    process.argv = ['node', 'create-launchapp', 'create-env', 'proj'];
+    try {
+      await import('../src/index');
+    } catch (e) {
+      // process.exit throws
+    }
+
+    expect(createEnvMock).toHaveBeenCalledWith('proj');
   });
 });
 
@@ -52,6 +71,7 @@ describe('initProject', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.unmock('../src/commands/initProject');
+    vi.unmock('../src/commands/createEnv');
   });
 
   afterEach(async () => {
@@ -59,6 +79,7 @@ describe('initProject', () => {
     const { spawn } = await import('child_process');
     setSpawn(spawn);
     vi.clearAllMocks();
+    vi.unmock('../src/commands/createEnv');
   });
 
   it('executes git clone with branch', async () => {
