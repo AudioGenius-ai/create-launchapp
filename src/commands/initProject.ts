@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { createEnv } from './createEnv';
 
 // Allow overriding spawn for testing
 export let spawnFn = spawn;
@@ -11,6 +12,7 @@ import path from 'path';
 export interface InitOptions {
   branch?: string;
   install?: boolean;
+  createEnv?: boolean;
 }
 
 export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
@@ -39,6 +41,10 @@ export async function initProject(projectName: string, options: InitOptions) {
   }
 
   await run('git', args);
+
+  if (options.createEnv) {
+    await createEnv(path.resolve(projectName));
+  }
 
   if (options.install) {
     await run('npm', ['install'], { cwd: path.resolve(projectName) });

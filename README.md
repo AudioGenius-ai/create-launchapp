@@ -16,6 +16,11 @@ The above command clones the Launchapp repository into `my-app` and runs `npm in
 
 - `--branch <branch>`: clone a specific branch from the Launchapp repository.
 - `--install`: automatically run `npm install` after cloning.
+- `--create-env`: generate a default `.env` file after cloning.
+
+### Subcommands
+
+- `create-env <projectDir>`: create the `.env` file in an existing project directory.
 
 ## Future Extensibility
 
