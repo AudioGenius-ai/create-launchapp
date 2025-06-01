@@ -10,6 +10,9 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "inquirer": "^9.0.0"
+  },
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
