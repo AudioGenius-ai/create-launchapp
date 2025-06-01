@@ -11,11 +11,13 @@ npx create-launchapp my-app --install
 ```
 
 The above command clones the Launchapp repository into `my-app` and runs `npm install` inside the created directory.
+An `.env.example` file is also generated using predefined environment variable definitions.
 
 ### Options
 
 - `--branch <branch>`: clone a specific branch from the Launchapp repository.
 - `--install`: automatically run `npm install` after cloning.
+- `--env`: prompt for environment variables using defaults and create a `.env` file.
 
 ## Future Extensibility
 

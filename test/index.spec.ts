@@ -12,7 +12,8 @@ const spawnMock = vi.fn(() => ({
 // Mock fs.existsSync to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    writeFileSync: vi.fn()
   }
 }));
 
@@ -37,14 +38,14 @@ describe('CLI argument parsing', () => {
     const mod = await import('../src/commands/initProject');
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
 
-    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
+    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install', '--env'];
     try {
       await import('../src/index');
     } catch (e) {
       // process.exit throws
     }
 
-    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
+    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true, promptEnv: true });
   });
 });
 

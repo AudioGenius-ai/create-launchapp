@@ -7,10 +7,12 @@ export function setSpawn(fn: typeof spawn) {
 }
 import fs from 'fs';
 import path from 'path';
+import { generateEnvExample, promptAndWriteEnv } from '../env/manageEnv';
 
 export interface InitOptions {
   branch?: string;
   install?: boolean;
+  promptEnv?: boolean;
 }
 
 export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
@@ -39,6 +41,11 @@ export async function initProject(projectName: string, options: InitOptions) {
   }
 
   await run('git', args);
+
+  generateEnvExample(projectName);
+  if (options.promptEnv) {
+    await promptAndWriteEnv(projectName);
+  }
 
   if (options.install) {
     await run('npm', ['install'], { cwd: path.resolve(projectName) });
