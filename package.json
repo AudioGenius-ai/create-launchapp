@@ -22,5 +22,9 @@
     "vitest": "^1.0.0",
     "@types/node": "^20.0.0",
     "release-it": "^17.0.0"
+  },
+  "dependencies": {
+    "inquirer": "^9.0.0",
+    "web-push": "^3.5.0"
   }
 }

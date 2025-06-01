@@ -17,6 +17,20 @@ The above command clones the Launchapp repository into `my-app` and runs `npm in
 - `--branch <branch>`: clone a specific branch from the Launchapp repository.
 - `--install`: automatically run `npm install` after cloning.
 
+### Environment Setup
+
+Once the project is created you can generate a `.env` file by running the
+`createEnv` command:
+
+```ts
+import { createEnv } from 'create-launchapp';
+
+await createEnv();
+```
+
+The script asks about push provider, payments and mobile configuration then
+creates a `.env` file (and optional `mobile/.env`).
+
 ## Future Extensibility
 
 The CLI is designed to be extended with additional commands. A planned feature is `add-plugin` to easily install and configure Launchapp plugins within an existing project.
