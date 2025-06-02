@@ -1,6 +1,6 @@
 {
   "name": "create-launchapp",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "CLI script to get a lunchapp project launched",
   "main": "dist/index.js",
   "bin": {
