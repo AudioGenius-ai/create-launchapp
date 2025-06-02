@@ -9,10 +9,12 @@ const spawnMock = vi.fn(() => ({
   }
 }));
 
-// Mock fs.existsSync to avoid filesystem side effects
+// Mock fs methods to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    mkdtempSync: vi.fn().mockReturnValue('/tmp/mock-repo'),
+    rmSync: vi.fn()
   }
 }));
 
@@ -44,7 +46,23 @@ describe('CLI argument parsing', () => {
       // process.exit throws
     }
 
-    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
+    expect(initProjectMock).toHaveBeenCalledWith(
+      'myapp',
+      expect.objectContaining({ branch: 'dev', install: true, worktree: false })
+    );
+  });
+
+  it('parses --worktree flag', async () => {
+    const mod = await import('../src/commands/initProject');
+    const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
+
+    process.argv = ['node', 'create-launchapp', 'app', '--worktree'];
+    await import('../src/index');
+
+    expect(initProjectMock).toHaveBeenCalledWith(
+      'app',
+      expect.objectContaining({ worktree: true })
+    );
   });
 });
 
@@ -71,5 +89,27 @@ describe('initProject', () => {
       ['clone', 'https://github.com/launchapp/launchapp.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
     );
+  });
+
+  it('uses git worktree when enabled', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    const fsMod = await import('fs');
+
+    await initProject('proj', { branch: 'dev', worktree: true });
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', '--bare', 'https://github.com/launchapp/launchapp.git', '/tmp/mock-repo'],
+      { stdio: 'inherit' }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      2,
+      'git',
+      ['worktree', 'add', require('path').resolve('proj'), 'dev'],
+      { stdio: 'inherit', cwd: '/tmp/mock-repo' }
+    );
+    expect(fsMod.default.rmSync).toHaveBeenCalledWith('/tmp/mock-repo', { recursive: true, force: true });
   });
 });
