@@ -3,7 +3,7 @@ import { createEnv } from './commands/createEnv';
 
 function showHelp() {
   console.log(
-    `Usage: create-launchapp <project-name> [--branch <branch>] [--install] [--create-env]\n` +
+    `Usage: create-launchapp <project-name> [--branch <branch>] [--install] [--worktree] [--create-env]\n` +
       `       create-launchapp create-env <project-name>`
   );
 }
@@ -32,6 +32,7 @@ async function main() {
 
   let branch: string | undefined;
   let install = false;
+  let worktree = false;
   let createEnvAfter = false;
 
   for (let i = 1; i < args.length; i++) {
@@ -45,6 +46,8 @@ async function main() {
       branch = args[++i];
     } else if (arg === '--install') {
       install = true;
+    } else if (arg === '--worktree') {
+      worktree = true;
     } else if (arg === '--create-env') {
       createEnvAfter = true;
     } else {
@@ -55,7 +58,7 @@ async function main() {
   }
 
   try {
-    await initProject(projectName, { branch, install });
+    await initProject(projectName, { branch, install, worktree });
     if (createEnvAfter) {
       await createEnv(projectName);
     }

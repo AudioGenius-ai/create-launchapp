@@ -7,10 +7,12 @@ export function setSpawn(fn: typeof spawn) {
 }
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export interface InitOptions {
   branch?: string;
   install?: boolean;
+  worktree?: boolean;
 }
 
 export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
@@ -33,12 +35,24 @@ export async function initProject(projectName: string, options: InitOptions) {
   }
 
   const repoUrl = 'https://github.com/AudioGenius-ai/launchapp.dev.git';
-  const args = ['clone', repoUrl, projectName];
-  if (options.branch) {
-    args.push('-b', options.branch);
-  }
 
-  await run('git', args);
+  if (options.worktree) {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchapp-'));
+    await run('git', ['clone', '--bare', repoUrl, tmpDir]);
+    const wtArgs = ['worktree', 'add', path.resolve(projectName)];
+    if (options.branch) {
+      wtArgs.push(options.branch);
+    }
+    await run('git', wtArgs, { cwd: tmpDir });
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  } else {
+    const args = ['clone', repoUrl, projectName];
+    if (options.branch) {
+      args.push('-b', options.branch);
+    }
+
+    await run('git', args);
+  }
 
   const projectPath = path.resolve(projectName);
 
