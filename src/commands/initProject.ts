@@ -32,7 +32,7 @@ export async function initProject(projectName: string, options: InitOptions) {
     throw new Error(`Directory ${projectName} already exists.`);
   }
 
-  const repoUrl = 'https://github.com/launchapp/launchapp.git';
+  const repoUrl = 'https://github.com/AudioGenius-ai/launchapp.dev.git';
   const args = ['clone', repoUrl, projectName];
   if (options.branch) {
     args.push('-b', options.branch);
@@ -40,7 +40,14 @@ export async function initProject(projectName: string, options: InitOptions) {
 
   await run('git', args);
 
+  const projectPath = path.resolve(projectName);
+
+  await fs.promises.rm(path.join(projectPath, '.git'), { recursive: true, force: true });
+  await run('git', ['init'], { cwd: projectPath });
+  await run('git', ['add', '.'], { cwd: projectPath });
+  await run('git', ['commit', '-m', 'Initial commit'], { cwd: projectPath });
+
   if (options.install) {
-    await run('npm', ['install'], { cwd: path.resolve(projectName) });
+    await run('pnpm', ['install'], { cwd: projectPath });
   }
 }
