@@ -1,6 +1,12 @@
-import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
+import inquirer from 'inquirer';
+import webPush from 'web-push';
+
+export interface CreateEnvOptions {
+  cwd?: string;
+}
 
 export const ENV_VARS = [
   'BETTER_AUTH_URL',
@@ -35,7 +41,8 @@ export const ENV_VARS = [
   'GITHUB_CLIENT_SECRET',
   'OPENAI_API_KEY',
   'ANTHROPIC_API_KEY',
-  'OPEN_ROUTER_KEY'
+  'OPEN_ROUTER_KEY',
+  'PAYMENTS_ENABLED'
 ] as const;
 
 export const DEFAULT_VALUES: Record<string, string> = {
@@ -71,7 +78,8 @@ export const DEFAULT_VALUES: Record<string, string> = {
   GITHUB_CLIENT_SECRET: 'your-github-client-secret',
   OPENAI_API_KEY: 'YOUR_OPENAI_API_KEY',
   ANTHROPIC_API_KEY: 'YOUR_ANTHROPIC_API_KEY',
-  OPEN_ROUTER_KEY: 'YOUR_OPEN_ROUTER_KEY'
+  OPEN_ROUTER_KEY: 'YOUR_OPEN_ROUTER_KEY',
+  PAYMENTS_ENABLED: 'false'
 };
 
 export async function createEnv(projectPath: string): Promise<void> {
@@ -84,7 +92,22 @@ export async function createEnv(projectPath: string): Promise<void> {
 
   const answers = await inquirer.prompt(questions) as Record<string, string>;
 
-  const envContent = ENV_VARS.map((k) => `${k}=${answers[k] ?? ''}`).join('\n');
+  const env: Record<string, string> = {};
+  
+  for (const key of ENV_VARS) {
+    if (key === 'BETTER_AUTH_SECRET' && answers[key] === DEFAULT_VALUES[key]) {
+      env[key] = crypto.randomBytes(32).toString('hex');
+    } else if (key === 'PUSH_PROVIDER' && answers[key] === 'web') {
+      const { publicKey, privateKey } = webPush.generateVAPIDKeys();
+      env.WEB_PUSH_PUBLIC_KEY = publicKey;
+      env.WEB_PUSH_PRIVATE_KEY = privateKey;
+      env[key] = answers[key];
+    } else {
+      env[key] = answers[key] ?? '';
+    }
+  }
+
+  const envContent = ENV_VARS.map((k) => `${k}=${env[k] ?? answers[k] ?? ''}`).join('\n');
 
   const envPath = path.join(projectPath, '.env');
   await fs.promises.writeFile(envPath, envContent);

@@ -12,7 +12,8 @@
   ],
   "dependencies": {
     "inquirer": "^12.6.3",
-    "open": "^10.1.2"
+    "open": "^10.1.2",
+    "web-push": "^3.5.0"
   },
   "scripts": {
     "build": "tsup",

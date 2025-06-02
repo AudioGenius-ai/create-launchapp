@@ -25,6 +25,20 @@ You can also run the environment setup separately:
 npx create-launchapp create-env my-app
 ```
 
+### Environment Setup
+
+Once the project is created you can generate a `.env` file by running the
+`createEnv` command:
+
+```ts
+import { createEnv } from 'create-launchapp';
+
+await createEnv();
+```
+
+The script asks about push provider, payments and mobile configuration then
+creates a `.env` file (and optional `mobile/.env`).
+
 ## Future Extensibility
 
 The CLI is designed to be extended with additional commands. A planned feature is `add-plugin` to easily install and configure Launchapp plugins within an existing project.
