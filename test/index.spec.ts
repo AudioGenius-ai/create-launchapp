@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import path from 'path';
 
 // Helper to simulate successful spawn
 const spawnMock = vi.fn(() => ({
@@ -12,7 +13,8 @@ const spawnMock = vi.fn(() => ({
 // Mock fs.existsSync to avoid filesystem side effects
 vi.mock('fs', () => ({
   default: {
-    existsSync: vi.fn().mockReturnValue(false)
+    existsSync: vi.fn().mockReturnValue(false),
+    rmSync: vi.fn()
   }
 }));
 
@@ -37,14 +39,14 @@ describe('CLI argument parsing', () => {
     const mod = await import('../src/commands/initProject');
     const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
 
-    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install'];
+    process.argv = ['node', 'create-launchapp', 'myapp', '--branch', 'dev', '--install', '--keep-git'];
     try {
       await import('../src/index');
     } catch (e) {
       // process.exit throws
     }
 
-    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true });
+    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', install: true, keepGit: true });
   });
 });
 
@@ -71,5 +73,40 @@ describe('initProject', () => {
       ['clone', 'https://github.com/launchapp/launchapp.git', 'proj', '-b', 'feature'],
       { stdio: 'inherit' }
     );
+  });
+
+  it('removes .git when keepGit is false', async () => {
+    const fsMod = await import('fs');
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+
+    const existsMock = fsMod.default.existsSync as any;
+    existsMock.mockReset();
+    existsMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
+
+    const rmMock = fsMod.default.rmSync as any;
+
+    await initProject('proj', {});
+
+    expect(rmMock).toHaveBeenCalledWith(
+      path.join(path.resolve('proj'), '.git'),
+      { recursive: true, force: true }
+    );
+  });
+
+  it('keeps .git when keepGit is true', async () => {
+    const fsMod = await import('fs');
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+
+    const existsMock = fsMod.default.existsSync as any;
+    existsMock.mockReset();
+    existsMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
+
+    const rmMock = fsMod.default.rmSync as any;
+
+    await initProject('proj', { keepGit: true });
+
+    expect(rmMock).not.toHaveBeenCalled();
   });
 });

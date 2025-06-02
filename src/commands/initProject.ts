@@ -11,6 +11,7 @@ import path from 'path';
 export interface InitOptions {
   branch?: string;
   install?: boolean;
+  keepGit?: boolean;
 }
 
 export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
@@ -39,6 +40,13 @@ export async function initProject(projectName: string, options: InitOptions) {
   }
 
   await run('git', args);
+
+  if (!options.keepGit) {
+    const gitDir = path.join(path.resolve(projectName), '.git');
+    if (fs.existsSync(gitDir)) {
+      fs.rmSync(gitDir, { recursive: true, force: true });
+    }
+  }
 
   if (options.install) {
     await run('npm', ['install'], { cwd: path.resolve(projectName) });

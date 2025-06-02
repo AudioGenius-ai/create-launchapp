@@ -16,6 +16,7 @@ The above command clones the Launchapp repository into `my-app` and runs `npm in
 
 - `--branch <branch>`: clone a specific branch from the Launchapp repository.
 - `--install`: automatically run `npm install` after cloning.
+- `--keep-git`: keep the cloned repository's .git directory. By default it is removed.
 
 ## Future Extensibility
 
