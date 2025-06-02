@@ -82,67 +82,33 @@ export const DEFAULT_VALUES: Record<string, string> = {
   PAYMENTS_ENABLED: 'false'
 };
 
-export async function createEnv(options: CreateEnvOptions = {}) {
-  const cwd = options.cwd || process.cwd();
+export async function createEnv(projectPath: string): Promise<void> {
+  const questions = ENV_VARS.map((name) => ({
+    type: 'input',
+    name,
+    message: `${name}:`,
+    default: process.env[name] ?? DEFAULT_VALUES[name]
+  }));
 
-  const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'authUrl',
-      message: 'Better Auth base URL',
-      default: DEFAULT_VALUES.BETTER_AUTH_URL
-    },
-    {
-      type: 'list',
-      name: 'pushProvider',
-      message: 'Select push notification provider',
-      choices: [
-        { name: 'None', value: 'none' },
-        { name: 'Expo', value: 'expo' },
-        { name: 'Firebase', value: 'firebase' },
-        { name: 'Web Push', value: 'web' }
-      ],
-      default: 'expo'
-    },
-    {
-      type: 'confirm',
-      name: 'payments',
-      message: 'Enable payments?',
-      default: false
-    },
-    {
-      type: 'confirm',
-      name: 'mobile',
-      message: 'Configure mobile app?',
-      default: false
+  const answers = await inquirer.prompt(questions) as Record<string, string>;
+
+  const env: Record<string, string> = {};
+  
+  for (const key of ENV_VARS) {
+    if (key === 'BETTER_AUTH_SECRET' && answers[key] === DEFAULT_VALUES[key]) {
+      env[key] = crypto.randomBytes(32).toString('hex');
+    } else if (key === 'PUSH_PROVIDER' && answers[key] === 'web') {
+      const { publicKey, privateKey } = webPush.generateVAPIDKeys();
+      env.WEB_PUSH_PUBLIC_KEY = publicKey;
+      env.WEB_PUSH_PRIVATE_KEY = privateKey;
+      env[key] = answers[key];
+    } else {
+      env[key] = answers[key] ?? '';
     }
-  ]);
-
-  const env: Record<string, string> = {
-    ...DEFAULT_VALUES,
-    BETTER_AUTH_URL: answers.authUrl,
-    BETTER_AUTH_SECRET: crypto.randomBytes(32).toString('hex'),
-    PUSH_PROVIDER: answers.pushProvider,
-    PAYMENTS_ENABLED: answers.payments ? 'true' : 'false'
-  };
-
-  if (answers.pushProvider === 'web') {
-    const { publicKey, privateKey } = webPush.generateVAPIDKeys();
-    env.WEB_PUSH_PUBLIC_KEY = publicKey;
-    env.WEB_PUSH_PRIVATE_KEY = privateKey;
   }
 
-  const envLines = Object.entries(env)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
+  const envContent = ENV_VARS.map((k) => `${k}=${env[k] ?? answers[k] ?? ''}`).join('\n');
 
-  const envPath = path.join(cwd, '.env');
-  fs.writeFileSync(envPath, envLines, { encoding: 'utf8' });
-
-  if (answers.mobile) {
-    const mobileDir = path.join(cwd, 'mobile');
-    fs.mkdirSync(mobileDir, { recursive: true });
-    const mobileEnvPath = path.join(mobileDir, '.env');
-    fs.writeFileSync(mobileEnvPath, envLines, { encoding: 'utf8' });
-  }
+  const envPath = path.join(projectPath, '.env');
+  await fs.promises.writeFile(envPath, envContent);
 }
