@@ -144,19 +144,6 @@ describe('initProject', () => {
     );
   });
 
-  it('uses main branch by default', async () => {
-    const { initProject, setSpawn } = await import('../src/commands/initProject');
-    setSpawn(spawnMock as any);
-    await initProject('proj', {} as any);
-
-    expect(spawnMock).toHaveBeenNthCalledWith(
-      1,
-      'git',
-      ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'main'],
-      { stdio: 'inherit' }
-    );
-  });
-
   it('installs dependencies with pnpm when requested', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
     setSpawn(spawnMock);
@@ -185,6 +172,19 @@ describe('createEnv', () => {
     expect(writeSpy).toHaveBeenCalledWith(
       require('path').join('proj', '.env'),
       expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    );
+  });
+
+  it('uses main branch by default', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock as any);
+    await initProject('proj', {} as any);
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'main'],
+      { stdio: 'inherit' }
     );
   });
 
@@ -230,5 +230,36 @@ describe('createEnv', () => {
       { stdio: 'inherit', cwd: '/tmp/mock-repo' }
     );
     expect(fsMod.default.rmSync).toHaveBeenCalledWith('/tmp/mock-repo', { recursive: true, force: true });
+  });
+
+  it('installs dependencies with pnpm when requested', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', { install: true });
+
+    expect(spawnMock).toHaveBeenLastCalledWith(
+      'pnpm',
+      ['install'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+  });
+});
+
+describe('createEnv', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('writes .env file', async () => {
+    const fs = await import('fs');
+    const writeSpy = fs.default.promises.writeFile as any;
+    const { createEnv } = await import('../src/commands/createEnv');
+
+    await createEnv('proj');
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      require('path').join('proj', '.env'),
+      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    );
   });
 });
