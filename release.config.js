@@ -1,18 +1,20 @@
 module.exports = {
   git: {
     tagName: 'v${version}',
-    commitMessage: 'chore: release ${version}'
+    commitMessage: 'chore: release ${version}',
+    addFiles: ['CHANGELOG.md']
   },
   npm: {
     publish: false
   },
   plugins: {
     '@release-it/conventional-changelog': {
-      preset: 'conventionalcommits'
+      preset: 'conventionalcommits',
+      infile: 'CHANGELOG.md'
     }
   },
   hooks: {
-    'before:init': ['pnpm test'],
+    'before:init': ['pnpm test run'],
     'after:bump': ['pnpm run build']
   }
 };
