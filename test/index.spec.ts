@@ -175,6 +175,19 @@ describe('createEnv', () => {
     );
   });
 
+  it('uses main branch by default', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock as any);
+    await initProject('proj', {} as any);
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'main'],
+      { stdio: 'inherit' }
+    );
+  });
+
   it('uses git worktree when enabled', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
     setSpawn(spawnMock);
@@ -195,5 +208,58 @@ describe('createEnv', () => {
       { stdio: 'inherit', cwd: '/tmp/mock-repo' }
     );
     expect(fsMod.default.rmSync).toHaveBeenCalledWith('/tmp/mock-repo', { recursive: true, force: true });
+  });
+
+  it('defaults to main branch when using worktree', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    const fsMod = await import('fs');
+
+    await initProject('proj', { worktree: true });
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', '--bare', 'https://github.com/AudioGenius-ai/launchapp.dev.git', '/tmp/mock-repo'],
+      { stdio: 'inherit' }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      2,
+      'git',
+      ['worktree', 'add', require('path').resolve('proj'), 'main'],
+      { stdio: 'inherit', cwd: '/tmp/mock-repo' }
+    );
+    expect(fsMod.default.rmSync).toHaveBeenCalledWith('/tmp/mock-repo', { recursive: true, force: true });
+  });
+
+  it('installs dependencies with pnpm when requested', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', { install: true });
+
+    expect(spawnMock).toHaveBeenLastCalledWith(
+      'pnpm',
+      ['install'],
+      { stdio: 'inherit', cwd: expect.stringContaining('proj') }
+    );
+  });
+});
+
+describe('createEnv', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('writes .env file', async () => {
+    const fs = await import('fs');
+    const writeSpy = fs.default.promises.writeFile as any;
+    const { createEnv } = await import('../src/commands/createEnv');
+
+    await createEnv('proj');
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      require('path').join('proj', '.env'),
+      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    );
   });
 });

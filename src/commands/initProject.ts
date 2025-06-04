@@ -36,22 +36,16 @@ export async function initProject(projectName: string, options: InitOptions) {
 
   const repoUrl = 'https://github.com/AudioGenius-ai/launchapp.dev.git';
 
+  const branch = options.branch ?? 'main';
+
   if (options.worktree) {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchapp-'));
     await run('git', ['clone', '--bare', repoUrl, tmpDir]);
-    const wtArgs = ['worktree', 'add', path.resolve(projectName)];
-    if (options.branch) {
-      wtArgs.push(options.branch);
-    }
+    const wtArgs = ['worktree', 'add', path.resolve(projectName), branch];
     await run('git', wtArgs, { cwd: tmpDir });
     fs.rmSync(tmpDir, { recursive: true, force: true });
   } else {
-    const args = ['clone', repoUrl, projectName];
-    if (options.branch) {
-      args.push('-b', options.branch);
-    }
-
-    await run('git', args);
+    await run('git', ['clone', repoUrl, projectName, '-b', branch]);
   }
 
   const projectPath = path.resolve(projectName);
