@@ -1,12 +1,43 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Helper to simulate successful spawn
-const spawnMock = vi.fn(() => ({
+const spawnMock = vi.fn((command: string, args: string[], options?: any) => ({
   on: (event: string, cb: (arg?: any) => void) => {
     if (event === 'close') {
       cb(0);
     }
-  }
+  },
+  stdin: null,
+  stdout: null,
+  stderr: null,
+  stdio: null,
+  killed: false,
+  pid: 1234,
+  connected: false,
+  exitCode: null,
+  signalCode: null,
+  spawnargs: args,
+  spawnfile: command,
+  kill: () => true,
+  send: () => true,
+  disconnect: () => {},
+  unref: () => {},
+  ref: () => {},
+  addListener: () => null,
+  emit: () => false,
+  eventNames: () => [],
+  getMaxListeners: () => 10,
+  listenerCount: () => 0,
+  listeners: () => [],
+  off: () => null,
+  once: () => null,
+  prependListener: () => null,
+  prependOnceListener: () => null,
+  removeAllListeners: () => null,
+  removeListener: () => null,
+  setMaxListeners: () => null,
+  rawListeners: () => [],
+  [Symbol.for('nodejs.rejection')]: () => {}
 }));
 
 // Mock fs methods to avoid filesystem side effects
@@ -38,7 +69,7 @@ vi.mock('inquirer', () => ({
 
 describe('CLI argument parsing', () => {
   const originalArgv = process.argv.slice();
-  let exitSpy: any;
+  let exitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.resetModules();
@@ -114,12 +145,13 @@ describe('initProject', () => {
     const { spawn } = await import('child_process');
     setSpawn(spawn);
     vi.clearAllMocks();
+    spawnMock.mockClear();
     vi.unmock('../src/commands/createEnv');
   });
 
   it('executes git clone and reinitializes repository', async () => {
     const { initProject, setSpawn } = await import('../src/commands/initProject');
-    setSpawn(spawnMock as any);
+    setSpawn(spawnMock);
     await initProject('proj', { branch: 'feature' });
 
     expect(spawnMock).toHaveBeenNthCalledWith(1,
@@ -155,23 +187,17 @@ describe('initProject', () => {
       { stdio: 'inherit', cwd: expect.stringContaining('proj') }
     );
   });
-});
 
-describe('createEnv', () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
+  it('uses main branch by default', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', {});
 
-  it('writes .env file', async () => {
-    const fs = await import('fs');
-    const writeSpy = fs.default.promises.writeFile as any;
-    const { createEnv } = await import('../src/commands/createEnv');
-
-    await createEnv('proj');
-
-    expect(writeSpy).toHaveBeenCalledWith(
-      require('path').join('proj', '.env'),
-      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', 'https://github.com/AudioGenius-ai/launchapp.dev.git', 'proj', '-b', 'main'],
+      { stdio: 'inherit' }
     );
   });
 
@@ -185,15 +211,56 @@ describe('createEnv', () => {
     expect(spawnMock).toHaveBeenNthCalledWith(
       1,
       'git',
-      ['clone', '--bare', 'https://github.com/AudioGenius-ai/launchapp.dev.git', '/tmp/mock-repo'],
+      ['clone', '--bare', 'https://github.com/AudioGenius-ai/launchapp.dev.git', expect.stringContaining('/tmp/')],
       { stdio: 'inherit' }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(
       2,
       'git',
       ['worktree', 'add', require('path').resolve('proj'), 'dev'],
-      { stdio: 'inherit', cwd: '/tmp/mock-repo' }
+      { stdio: 'inherit', cwd: expect.stringContaining('/tmp/') }
     );
-    expect(fsMod.default.rmSync).toHaveBeenCalledWith('/tmp/mock-repo', { recursive: true, force: true });
+    expect(fsMod.default.rmSync).toHaveBeenCalledWith(expect.stringContaining('/tmp/'), { recursive: true, force: true });
+  });
+
+  it('defaults to main branch when using worktree', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    const fsMod = await import('fs');
+
+    await initProject('proj', { worktree: true });
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      'git',
+      ['clone', '--bare', 'https://github.com/AudioGenius-ai/launchapp.dev.git', expect.stringContaining('/tmp/')],
+      { stdio: 'inherit' }
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      2,
+      'git',
+      ['worktree', 'add', require('path').resolve('proj'), 'main'],
+      { stdio: 'inherit', cwd: expect.stringContaining('/tmp/') }
+    );
+    expect(fsMod.default.rmSync).toHaveBeenCalledWith(expect.stringContaining('/tmp/'), { recursive: true, force: true });
+  });
+});
+
+describe('createEnv', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('writes .env file', async () => {
+    const fs = await import('fs');
+    const writeSpy = fs.default.promises.writeFile;
+    const { createEnv } = await import('../src/commands/createEnv');
+
+    await createEnv('proj');
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      require('path').join('proj', '.env'),
+      expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    );
   });
 });

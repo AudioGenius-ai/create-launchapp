@@ -18,6 +18,7 @@ The above command clones the Launchapp repository into `my-app` and runs `pnpm i
 - `--install`: automatically run `npm install` after cloning.
 - `--worktree`: create the project using `git worktree` instead of a normal clone.
 - `--create-env`: generate a basic `.env` file after cloning.
+- If `--branch` is not provided, the `main` branch is used by default.
 
 You can also run the environment setup separately:
 
