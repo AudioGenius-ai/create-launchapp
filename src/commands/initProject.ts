@@ -7,11 +7,13 @@ export function setSpawn(fn: typeof spawn) {
 }
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export interface InitOptions {
   branch?: string;
   repoUrl?: string;
   install?: boolean;
+  worktree?: boolean;
 }
 
 export function run(command: string, args: string[], options: { cwd?: string } = {}): Promise<void> {
@@ -35,13 +37,26 @@ export async function initProject(projectName: string, options: InitOptions) {
 
   const repoUrl = options.repoUrl || 'https://github.com/launchapp/launchapp.git';
   const args = ['clone', repoUrl, projectName];
-  if (options.branch) {
-    args.push('-b', options.branch);
+  const branch = options.branch ?? 'main';
+
+  if (options.worktree) {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchapp-'));
+    await run('git', ['clone', '--bare', repoUrl, tmpDir]);
+    const wtArgs = ['worktree', 'add', path.resolve(projectName), branch];
+    await run('git', wtArgs, { cwd: tmpDir });
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  } else {
+    await run('git', ['clone', repoUrl, projectName, '-b', branch]);
   }
 
-  await run('git', args);
+  const projectPath = path.resolve(projectName);
+
+  await fs.promises.rm(path.join(projectPath, '.git'), { recursive: true, force: true });
+  await run('git', ['init'], { cwd: projectPath });
+  await run('git', ['add', '.'], { cwd: projectPath });
+  await run('git', ['commit', '-m', 'Initial commit'], { cwd: projectPath });
 
   if (options.install) {
-    await run('npm', ['install'], { cwd: path.resolve(projectName) });
+    await run('pnpm', ['install'], { cwd: projectPath });
   }
 }
