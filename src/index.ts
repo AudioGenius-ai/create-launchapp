@@ -2,7 +2,9 @@
 import { initProject } from './commands/initProject';
 
 function showHelp() {
-  console.log(`Usage: create-launchapp <project-name> [--branch <branch>] [--install]`);
+  console.log(
+    `Usage: create-launchapp <project-name> [--branch <branch>] [--repo <url>] [--install]`
+  );
 }
 
 async function main() {
@@ -16,6 +18,7 @@ async function main() {
   }
 
   let branch: string | undefined;
+  let repoUrl: string | undefined;
   let install = false;
 
   for (let i = 1; i < args.length; i++) {
@@ -27,6 +30,13 @@ async function main() {
         process.exit(1);
       }
       branch = args[++i];
+    } else if (arg === '--repo') {
+      if (i + 1 >= args.length) {
+        console.error('Error: --repo requires a value.');
+        showHelp();
+        process.exit(1);
+      }
+      repoUrl = args[++i];
     } else if (arg === '--install') {
       install = true;
     } else {
@@ -37,7 +47,7 @@ async function main() {
   }
 
   try {
-    await initProject(projectName, { branch, install });
+    await initProject(projectName, { branch, repoUrl, install });
   } catch (err: any) {
     console.error(err.message);
     process.exit(1);

@@ -10,6 +10,7 @@ import path from 'path';
 
 export interface InitOptions {
   branch?: string;
+  repoUrl?: string;
   install?: boolean;
 }
 
@@ -32,7 +33,7 @@ export async function initProject(projectName: string, options: InitOptions) {
     throw new Error(`Directory ${projectName} already exists.`);
   }
 
-  const repoUrl = 'https://github.com/launchapp/launchapp.git';
+  const repoUrl = options.repoUrl || 'https://github.com/launchapp/launchapp.git';
   const args = ['clone', repoUrl, projectName];
   if (options.branch) {
     args.push('-b', options.branch);
