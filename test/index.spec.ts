@@ -129,7 +129,7 @@ describe('CLI argument parsing', () => {
       // process.exit throws
     }
 
-    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: 'dev', repoUrl: undefined, branch: undefined, install: true });
+    expect(createEnvMock).toHaveBeenCalledWith('proj');
   });
 
   it('passes repo option to initProject', async () => {
@@ -143,8 +143,7 @@ describe('CLI argument parsing', () => {
       // process.exit throws
     }
 
-    expect(initProjectMock).toHaveBeenCalledWith('myapp', { repoUrl: 'https://example.com/repo.git', branch: undefined, repoUrl: undefined, install: false });
-    expect(createEnvMock).toHaveBeenCalledWith('proj');
+    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: undefined, repoUrl: 'https://example.com/repo.git', install: false, worktree: false });
   });
 });
 
@@ -286,7 +285,7 @@ describe('createEnv', () => {
 
     expect(spawnMock).toHaveBeenCalledWith(
       'git',
-      ['clone', 'https://example.com/custom.git', 'proj'],
+      ['clone', 'https://example.com/custom.git', 'proj', '-b', 'main'],
       { stdio: 'inherit' }
     );
   });

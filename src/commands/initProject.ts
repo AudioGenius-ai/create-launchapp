@@ -35,7 +35,7 @@ export async function initProject(projectName: string, options: InitOptions) {
     throw new Error(`Directory ${projectName} already exists.`);
   }
 
-  const repoUrl = options.repoUrl || 'https://github.com/launchapp/launchapp.git';
+  const repoUrl = options.repoUrl || 'https://github.com/AudioGenius-ai/launchapp.dev.git';
   const args = ['clone', repoUrl, projectName];
   const branch = options.branch ?? 'main';
 
