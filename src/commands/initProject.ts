@@ -11,6 +11,7 @@ import os from 'os';
 
 export interface InitOptions {
   branch?: string;
+  repoUrl?: string;
   install?: boolean;
   worktree?: boolean;
 }
@@ -34,8 +35,8 @@ export async function initProject(projectName: string, options: InitOptions) {
     throw new Error(`Directory ${projectName} already exists.`);
   }
 
-  const repoUrl = 'https://github.com/AudioGenius-ai/launchapp.dev.git';
-
+  const repoUrl = options.repoUrl || 'https://github.com/AudioGenius-ai/launchapp.dev.git';
+  const args = ['clone', repoUrl, projectName];
   const branch = options.branch ?? 'main';
 
   if (options.worktree) {

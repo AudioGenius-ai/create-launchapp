@@ -131,6 +131,20 @@ describe('CLI argument parsing', () => {
 
     expect(createEnvMock).toHaveBeenCalledWith('proj');
   });
+
+  it('passes repo option to initProject', async () => {
+    const mod = await import('../src/commands/initProject');
+    const initProjectMock = vi.spyOn(mod, 'initProject').mockResolvedValue(undefined);
+
+    process.argv = ['node', 'create-launchapp', 'myapp', '--repo', 'https://example.com/repo.git'];
+    try {
+      await import('../src/index');
+    } catch (e) {
+      // process.exit throws
+    }
+
+    expect(initProjectMock).toHaveBeenCalledWith('myapp', { branch: undefined, repoUrl: 'https://example.com/repo.git', install: false, worktree: false });
+  });
 });
 
 describe('initProject', () => {
@@ -261,6 +275,18 @@ describe('createEnv', () => {
     expect(writeSpy).toHaveBeenCalledWith(
       require('path').join('proj', '.env'),
       expect.stringContaining('BETTER_AUTH_URL=http://localhost:5173')
+    );
+  });
+
+  it('executes git clone with custom repo', async () => {
+    const { initProject, setSpawn } = await import('../src/commands/initProject');
+    setSpawn(spawnMock);
+    await initProject('proj', { repoUrl: 'https://example.com/custom.git' });
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      'git',
+      ['clone', 'https://example.com/custom.git', 'proj', '-b', 'main'],
+      { stdio: 'inherit' }
     );
   });
 });

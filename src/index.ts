@@ -3,7 +3,7 @@ import { createEnv } from './commands/createEnv';
 
 function showHelp() {
   console.log(
-    `Usage: create-launchapp <project-name> [--branch <branch>] [--install] [--worktree] [--create-env]\n` +
+    `Usage: create-launchapp <project-name> [--branch <branch>] [--repo <url>] [--install] [--worktree] [--create-env]\n` +
       `       create-launchapp create-env <project-name>`
   );
 }
@@ -31,6 +31,7 @@ async function main() {
   }
 
   let branch: string | undefined;
+  let repoUrl: string | undefined;
   let install = false;
   let worktree = false;
   let createEnvAfter = false;
@@ -44,6 +45,13 @@ async function main() {
         process.exit(1);
       }
       branch = args[++i];
+    } else if (arg === '--repo') {
+      if (i + 1 >= args.length) {
+        console.error('Error: --repo requires a value.');
+        showHelp();
+        process.exit(1);
+      }
+      repoUrl = args[++i];
     } else if (arg === '--install') {
       install = true;
     } else if (arg === '--worktree') {
@@ -58,7 +66,7 @@ async function main() {
   }
 
   try {
-    await initProject(projectName, { branch, install, worktree });
+    await initProject(projectName, { branch, repoUrl, install, worktree });
     if (createEnvAfter) {
       await createEnv(projectName);
     }
